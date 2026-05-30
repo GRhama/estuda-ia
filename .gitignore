@@ -1,0 +1,32 @@
+# Ambiente
+.env
+*.pyc
+__pycache__/
+*.pyo
+.venv/
+venv/
+
+# Dados e vetores
+data/qdrant/
+data/estuda.db
+logs/
+*.log
+
+# Secrets
+*.key
+*.pem
+
+# Python
+dist/
+build/
+*.egg-info/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Docker
+*.override.yml
+
+# OS
+.DS_Store
+Thumbs.db
