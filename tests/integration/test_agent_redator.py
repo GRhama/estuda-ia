@@ -8,7 +8,6 @@ from agents.schemas.redacao_unicamp import RedacaoUNICAMP, PropostaUNICAMP
 from agents.schemas.redacao_unesp import RedacaoUNESP
 from agents.schemas.resumo import Resumo
 from agents.schemas.dpo import DPO, BlocoArgumentativo
-from agents.schemas.analise_texto import AnaliseTextoModoA
 from agents.schemas.ficha_estudo import FichaEstudo
 from agents.schemas.shared import FonteOficial
 
@@ -88,9 +87,6 @@ class TestGetSchema:
 
     def test_dpo_retorna_dpo(self):
         assert _get_schema("dpo", None) == DPO
-
-    def test_analise_texto_retorna_modo_a(self):
-        assert _get_schema("analise_texto", None) == AnaliseTextoModoA
 
     def test_ficha_estudo_retorna_ficha(self):
         assert _get_schema("ficha_estudo", None) == FichaEstudo
