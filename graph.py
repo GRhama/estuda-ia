@@ -19,7 +19,7 @@ class GraphState(TypedDict):
     session_id: str
 
 
-def _router_node(state: GraphState) -> GraphState:
+async def _router_node(state: GraphState) -> GraphState:
     from core.router import route
     rid = state["request_id"]
     logger.debug(f"[{rid}] graph: nó router")
@@ -27,28 +27,24 @@ def _router_node(state: GraphState) -> GraphState:
     return {**state, "fontes_autorizadas": fontes}
 
 
-def _agent_dados_node(state: GraphState) -> GraphState:
-    rid = state["request_id"]
-    logger.debug(f"[{rid}] graph: nó agent_dados (stub Sprint 2)")
-    return {**state, "dados_coletados": {}}
+async def _agent_dados_node(state: GraphState) -> GraphState:
+    from agents.agent_dados import run
+    return await run(state)
 
 
-def _agent_rag_node(state: GraphState) -> GraphState:
-    rid = state["request_id"]
-    logger.debug(f"[{rid}] graph: nó agent_rag (stub Sprint 3)")
-    return {**state, "chunks_rag": []}
+async def _agent_rag_node(state: GraphState) -> GraphState:
+    from agents.agent_rag import run
+    return await run(state)
 
 
-def _agent_redator_node(state: GraphState) -> GraphState:
-    rid = state["request_id"]
-    logger.debug(f"[{rid}] graph: nó agent_redator (stub Sprint 3)")
-    return {**state, "output": {}}
+async def _agent_redator_node(state: GraphState) -> GraphState:
+    from agents.agent_redator import run
+    return await run(state)
 
 
-def _agent_exercicios_node(state: GraphState) -> GraphState:
-    rid = state["request_id"]
-    logger.debug(f"[{rid}] graph: nó agent_exercicios (stub Sprint 5)")
-    return state
+async def _agent_exercicios_node(state: GraphState) -> GraphState:
+    from agents.agent_exercicios import run
+    return await run(state)
 
 
 def _should_run_exercicios(state: GraphState) -> str:
