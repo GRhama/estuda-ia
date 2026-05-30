@@ -10,6 +10,7 @@ from agents.schemas.redacao_fuvest import RedacaoFUVEST
 from agents.schemas.redacao_unicamp import RedacaoUNICAMP
 from agents.schemas.redacao_unesp import RedacaoUNESP
 from agents.schemas.resumo import Resumo
+from agents.schemas.analise_texto import AnaliseTextoModoA
 from agents.schemas.dpo import DPO
 from agents.schemas.ficha_estudo import FichaEstudo
 
@@ -17,6 +18,7 @@ TOKEN_BUDGET: dict[str, int] = {
     "resumo": 3000,
     "redacao": 5000,
     "dpo": 6000,
+    "analise_texto": 4500,
     "ficha_estudo": 12000,
 }
 
@@ -30,6 +32,7 @@ _SCHEMA_MAP: dict[str, dict] = {
     },
     "resumo": {None: Resumo},
     "dpo": {None: DPO},
+    "analise_texto": {None: AnaliseTextoModoA},
     "ficha_estudo": {None: FichaEstudo},
 }
 
