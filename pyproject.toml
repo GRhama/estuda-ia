@@ -1,0 +1,7 @@
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+addopts = "--cov=agents --cov=core --cov=graph --cov-report=term-missing"
+
+[tool.coverage.run]
+omit = ["tests/*", ".venv/*"]
