@@ -10,6 +10,7 @@ class GraphState(TypedDict):
     disciplina: str
     tipo: str
     banca: Optional[str]
+    trecho: Optional[str]          # texto para análise — Modo A se presente, Modo B se None
     fontes_autorizadas: List[str]
     dados_coletados: dict
     chunks_rag: List[dict]
@@ -42,9 +43,18 @@ async def _agent_redator_node(state: GraphState) -> GraphState:
     return await run(state)
 
 
+async def _agent_analista_node(state: GraphState) -> GraphState:
+    from agents.agent_analista import run
+    return await run(state)
+
+
 async def _agent_exercicios_node(state: GraphState) -> GraphState:
     from agents.agent_exercicios import run
     return await run(state)
+
+
+def _route_after_rag(state: GraphState) -> str:
+    return "agent_analista" if state.get("tipo") == "analise_texto" else "agent_redator"
 
 
 def _should_run_exercicios(state: GraphState) -> str:
@@ -56,13 +66,15 @@ builder.add_node("router", _router_node)
 builder.add_node("agent_dados", _agent_dados_node)
 builder.add_node("agent_rag", _agent_rag_node)
 builder.add_node("agent_redator", _agent_redator_node)
+builder.add_node("agent_analista", _agent_analista_node)
 builder.add_node("agent_exercicios", _agent_exercicios_node)
 
 builder.set_entry_point("router")
 builder.add_edge("router", "agent_dados")
 builder.add_edge("agent_dados", "agent_rag")
-builder.add_edge("agent_rag", "agent_redator")
+builder.add_conditional_edges("agent_rag", _route_after_rag)
 builder.add_conditional_edges("agent_redator", _should_run_exercicios)
+builder.add_conditional_edges("agent_analista", _should_run_exercicios)
 builder.add_edge("agent_exercicios", END)
 
 graph = builder.compile()

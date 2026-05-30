@@ -57,6 +57,6 @@ def fetch_rss(url: str, rid: str, keyword: str = "") -> list[dict]:
 
 
 RSS_SOURCES = {
-    "senado": "https://www12.senado.leg.br/noticias/rss/ultimas",
+    "senado": "https://www12.senado.leg.br/noticias/feed",
     "gov_br": "https://www.gov.br/pt-br/noticias/noticias.rss",
 }

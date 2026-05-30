@@ -161,7 +161,7 @@ async def fetch_wikipedia_pt(client: httpx.AsyncClient, rid: str, tema: str) -> 
         f"&exintro=1&explaintext=1&titles={urllib.parse.quote(tema)}&format=json"
     )
     try:
-        r = await safe_fetch(client, url)
+        r = await safe_fetch(client, url, headers={"User-Agent": "EstudaIA/1.0 (educational platform)"})
         r.raise_for_status()
         return _ok(r.text, "Wikipedia PT", url)
     except Exception as e:

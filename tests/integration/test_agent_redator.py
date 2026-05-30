@@ -161,3 +161,106 @@ class TestAgentRedatorRun:
 
         with pytest.raises(RuntimeError, match="API down"):
             await run({**BASE_STATE, "tipo": "resumo"})
+
+
+# ─── CA-03: Resumo ────────────────────────────────────────────────────────────
+
+@pytest.mark.asyncio
+class TestCA03Resumo:
+    """CA-03: Resumo — topicos, texto_resumido e fontes presentes."""
+
+    async def test_ca03_output_tem_titulo(self, mocker):
+        mocker.patch("agents.agent_redator._make_instructor_client",
+                     return_value=_make_instructor_mock(_mock_resumo()))
+        result = await run({**BASE_STATE, "tipo": "resumo"})
+        assert result["output"]["titulo"]
+
+    async def test_ca03_output_tem_topicos(self, mocker):
+        mocker.patch("agents.agent_redator._make_instructor_client",
+                     return_value=_make_instructor_mock(_mock_resumo()))
+        result = await run({**BASE_STATE, "tipo": "resumo"})
+        assert len(result["output"]["topicos"]) > 0
+
+    async def test_ca03_output_tem_texto_resumido(self, mocker):
+        mocker.patch("agents.agent_redator._make_instructor_client",
+                     return_value=_make_instructor_mock(_mock_resumo()))
+        result = await run({**BASE_STATE, "tipo": "resumo"})
+        assert result["output"]["texto_resumido"]
+
+    async def test_ca03_schema_usado_e_resumo(self, mocker):
+        mock_c = _make_instructor_mock(_mock_resumo())
+        mocker.patch("agents.agent_redator._make_instructor_client", return_value=mock_c)
+        await run({**BASE_STATE, "tipo": "resumo"})
+        assert mock_c.chat.completions.create.call_args.kwargs["response_model"] == Resumo
+
+    async def test_ca03_max_tokens_correto(self, mocker):
+        mock_c = _make_instructor_mock(_mock_resumo())
+        mocker.patch("agents.agent_redator._make_instructor_client", return_value=mock_c)
+        await run({**BASE_STATE, "tipo": "resumo"})
+        assert mock_c.chat.completions.create.call_args.kwargs["max_tokens"] == 3000
+
+
+# ─── CA-02: DPO ───────────────────────────────────────────────────────────────
+
+@pytest.mark.asyncio
+class TestCA02DPO:
+    """CA-02: DPO — tese, blocos argumentativos e guardrail REGRA 1."""
+
+    def _mock_dpo(self):
+        from agents.schemas.dpo import BlocoArgumentativo
+        return DPO(
+            tema="desigualdade social",
+            tese="A desigualdade é estrutural e exige políticas redistributivas.",
+            blocos=[
+                BlocoArgumentativo(
+                    argumento="O índice Gini brasileiro é um dos maiores do mundo.",
+                    dado_estatistico="0,54 em 2022",
+                    fonte=_FONTE,
+                    localizado_em_fonte_oficial=True,
+                ),
+                BlocoArgumentativo(
+                    argumento="A renda é concentrada no topo.",
+                    localizado_em_fonte_oficial=False,
+                ),
+            ],
+            conclusao="Logo, é necessário agir.",
+            fontes=[_FONTE],
+        )
+
+    async def test_ca02_output_tem_tese(self, mocker):
+        mocker.patch("agents.agent_redator._make_instructor_client",
+                     return_value=_make_instructor_mock(self._mock_dpo()))
+        result = await run({**BASE_STATE, "tipo": "dpo"})
+        assert result["output"]["tese"]
+
+    async def test_ca02_output_tem_blocos(self, mocker):
+        mocker.patch("agents.agent_redator._make_instructor_client",
+                     return_value=_make_instructor_mock(self._mock_dpo()))
+        result = await run({**BASE_STATE, "tipo": "dpo"})
+        assert len(result["output"]["blocos"]) > 0
+
+    async def test_ca02_guardrail_regra1_dado_sem_fonte(self, mocker):
+        """REGRA 1: bloco sem fonte → dado_estatistico substituído."""
+        from agents.schemas.dpo import TEXTO_SEM_FONTE
+        dpo = self._mock_dpo()
+        # bloco[1] tem localizado_em_fonte_oficial=False e sem dado_estatistico
+        # Validador Pydantic já aplica guardrail no model_dump
+        mocker.patch("agents.agent_redator._make_instructor_client",
+                     return_value=_make_instructor_mock(dpo))
+        result = await run({**BASE_STATE, "tipo": "dpo"})
+        blocos = result["output"]["blocos"]
+        for bloco in blocos:
+            if not bloco["localizado_em_fonte_oficial"] and bloco["dado_estatistico"]:
+                assert bloco["dado_estatistico"] == TEXTO_SEM_FONTE
+
+    async def test_ca02_schema_usado_e_dpo(self, mocker):
+        mock_c = _make_instructor_mock(self._mock_dpo())
+        mocker.patch("agents.agent_redator._make_instructor_client", return_value=mock_c)
+        await run({**BASE_STATE, "tipo": "dpo"})
+        assert mock_c.chat.completions.create.call_args.kwargs["response_model"] == DPO
+
+    async def test_ca02_max_tokens_correto(self, mocker):
+        mock_c = _make_instructor_mock(self._mock_dpo())
+        mocker.patch("agents.agent_redator._make_instructor_client", return_value=mock_c)
+        await run({**BASE_STATE, "tipo": "dpo"})
+        assert mock_c.chat.completions.create.call_args.kwargs["max_tokens"] == 6000
