@@ -6,11 +6,11 @@ from openai import AsyncOpenAI
 from graph import GraphState
 from agents.schemas.exercicio import ExercicioMultiplaEscolha
 
-_GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/openai/"
+_EXTERNAL_BASE_URL = "https://api.groq.com/openai/v1"
 
 
-def _is_gemini(model: str) -> bool:
-    return model.startswith("gemini")
+def _is_anthropic(model: str) -> bool:
+    return model.startswith("claude")
 
 _TOKEN_PER_EXERCICIO = 800
 _MAX_TENTATIVAS = 3
@@ -49,10 +49,10 @@ def _build_prompt(
 
 
 def _make_instructor_client(model: str = "") -> instructor.AsyncInstructor:
-    if _is_gemini(model):
+    if not _is_anthropic(model):
         oai = AsyncOpenAI(
-            api_key=os.environ.get("GEMINI_API_KEY", ""),
-            base_url=_GEMINI_BASE_URL,
+            api_key=os.environ.get("GROQ_API_KEY", ""),
+            base_url=_EXTERNAL_BASE_URL,
         )
         return instructor.from_openai(oai)
     anth = anthropic.AsyncAnthropic(api_key=os.environ.get("ANTHROPIC_API_KEY", ""))
@@ -74,7 +74,7 @@ async def _gerar_exercicio_com_retry(
 
     for attempt in range(max_tentativas):
         try:
-            if _is_gemini(model):
+            if not _is_anthropic(model):
                 result = await client.chat.completions.create(
                     model=model,
                     max_tokens=_TOKEN_PER_EXERCICIO,

@@ -116,21 +116,21 @@ class TestGerarExercicioComRetry:
     async def test_sucesso_primeira_tentativa(self):
         ex = _ex_exatas("cálculo")
         client = _mock_client([ex])
-        result = await _gerar_exercicio_com_retry(client, "model", "tema", "exatas", [], [], RID)
+        result = await _gerar_exercicio_com_retry(client, "claude-test", "tema", "exatas", [], [], RID)
         assert result.conceito == "cálculo"
         assert client.messages.create.call_count == 1
 
     async def test_retry_em_excecao_segunda_tentativa_ok(self):
         ex = _ex_exatas("cálculo")
         client = _mock_client([RuntimeError("falhou"), ex])
-        result = await _gerar_exercicio_com_retry(client, "model", "tema", "exatas", [], [], RID)
+        result = await _gerar_exercicio_com_retry(client, "claude-test", "tema", "exatas", [], [], RID)
         assert result.conceito == "cálculo"
         assert client.messages.create.call_count == 2
 
     async def test_max_3_tentativas_propaga_excecao(self):
         client = _mock_client([RuntimeError("falhou")] * 3)
         with pytest.raises(RuntimeError, match="falhou"):
-            await _gerar_exercicio_com_retry(client, "model", "tema", "exatas", [], [], RID)
+            await _gerar_exercicio_com_retry(client, "claude-test", "tema", "exatas", [], [], RID)
         assert client.messages.create.call_count == 3
 
     async def test_conceito_duplicado_tenta_novamente(self):
@@ -138,7 +138,7 @@ class TestGerarExercicioComRetry:
         ex_novo = _ex_exatas("geometria")
         client = _mock_client([ex_dup, ex_novo])
         result = await _gerar_exercicio_com_retry(
-            client, "model", "tema", "exatas", [], ["cálculo"], RID
+            client, "claude-test", "tema", "exatas", [], ["cálculo"], RID
         )
         assert result.conceito == "geometria"
         assert client.messages.create.call_count == 2
@@ -148,7 +148,7 @@ class TestGerarExercicioComRetry:
         client = _mock_client([ex_dup, ex_dup, ex_dup])
         with pytest.raises(RuntimeError):
             await _gerar_exercicio_com_retry(
-                client, "model", "tema", "exatas", [], ["cálculo"], RID
+                client, "claude-test", "tema", "exatas", [], ["cálculo"], RID
             )
 
 

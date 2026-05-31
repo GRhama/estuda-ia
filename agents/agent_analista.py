@@ -6,11 +6,11 @@ from openai import OpenAI
 from graph import GraphState
 from agents.schemas.analise_texto import AnaliseTextoModoA, AnaliseTextoModoB
 
-_GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/openai/"
+_EXTERNAL_BASE_URL = "https://api.groq.com/openai/v1"
 
 
-def _is_gemini(model: str) -> bool:
-    return model.startswith("gemini")
+def _is_anthropic(model: str) -> bool:
+    return model.startswith("claude")
 
 TOKEN_BUDGET_ANALISE = 4500
 
@@ -40,10 +40,10 @@ def _build_prompt(chunks: list[dict], tema: str, trecho: str | None, modo: str) 
 
 
 def _make_instructor_client(model: str = "") -> instructor.Instructor:
-    if _is_gemini(model):
+    if not _is_anthropic(model):
         oai = OpenAI(
-            api_key=os.environ.get("GEMINI_API_KEY", ""),
-            base_url=_GEMINI_BASE_URL,
+            api_key=os.environ.get("GROQ_API_KEY", ""),
+            base_url=_EXTERNAL_BASE_URL,
         )
         return instructor.from_openai(oai)
     anth = anthropic.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY", ""))

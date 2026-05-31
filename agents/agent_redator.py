@@ -8,11 +8,11 @@ from openai import AsyncOpenAI
 from pydantic import BaseModel
 from graph import GraphState
 
-_GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/openai/"
+_EXTERNAL_BASE_URL = "https://api.groq.com/openai/v1"
 
 
-def _is_gemini(model: str) -> bool:
-    return model.startswith("gemini")
+def _is_anthropic(model: str) -> bool:
+    return model.startswith("claude")
 from agents.schemas.redacao_enem import RedacaoENEM
 from agents.schemas.redacao_fuvest import RedacaoFUVEST
 from agents.schemas.redacao_unicamp import RedacaoUNICAMP
@@ -71,10 +71,10 @@ def _build_prompt(tipo: str, chunks: list[dict], tema: str) -> str:
 
 
 def _make_instructor_client(model: str = "") -> instructor.AsyncInstructor:
-    if _is_gemini(model):
+    if not _is_anthropic(model):
         oai = AsyncOpenAI(
-            api_key=os.environ.get("GEMINI_API_KEY", ""),
-            base_url=_GEMINI_BASE_URL,
+            api_key=os.environ.get("GROQ_API_KEY", ""),
+            base_url=_EXTERNAL_BASE_URL,
         )
         return instructor.from_openai(oai)
     anth = anthropic.AsyncAnthropic(api_key=os.environ.get("ANTHROPIC_API_KEY", ""))
@@ -98,7 +98,7 @@ async def run(state: GraphState) -> GraphState:
     prompt = _build_prompt(tipo, chunks, tema)
 
     try:
-        if _is_gemini(model):
+        if not _is_anthropic(model):
             result = await client.chat.completions.create(
                 model=model,
                 max_tokens=max_tokens,
