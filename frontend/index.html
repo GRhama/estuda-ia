@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <meta name="theme-color" content="#2563eb">
+  <title>Estuda.IA</title>
+  <link rel="manifest" href="/manifest.json">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --azul: #2563eb;
+      --azul-escuro: #1d4ed8;
+      --cinza: #6b7280;
+      --borda: #e5e7eb;
+      --fundo: #f9fafb;
+      --branco: #ffffff;
+      --erro: #dc2626;
+      --verde: #16a34a;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--fundo);
+      color: #111827;
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      background: var(--azul);
+      color: var(--branco);
+      padding: 1rem;
+      text-align: center;
+      font-size: 1.25rem;
+      font-weight: 700;
+      letter-spacing: -0.025em;
+    }
+
+    main {
+      flex: 1;
+      padding: 1rem;
+      max-width: 640px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    .card {
+      background: var(--branco);
+      border: 1px solid var(--borda);
+      border-radius: 0.75rem;
+      padding: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    label {
+      display: block;
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: #374151;
+      margin-bottom: 0.375rem;
+    }
+
+    textarea, select, input[type=text] {
+      width: 100%;
+      border: 1px solid var(--borda);
+      border-radius: 0.5rem;
+      padding: 0.625rem 0.75rem;
+      font-size: 1rem;
+      color: #111827;
+      background: var(--branco);
+      outline: none;
+      transition: border-color 0.15s;
+      -webkit-appearance: none;
+    }
+
+    textarea:focus, select:focus, input[type=text]:focus {
+      border-color: var(--azul);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+    }
+
+    textarea { resize: none; min-height: 100px; }
+
+    .row { display: flex; gap: 0.75rem; }
+    .row > div { flex: 1; }
+
+    button {
+      width: 100%;
+      background: var(--azul);
+      color: var(--branco);
+      border: none;
+      border-radius: 0.5rem;
+      padding: 0.875rem;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+    button:active { background: var(--azul-escuro); }
+    button:disabled { background: var(--cinza); cursor: not-allowed; }
+
+    #status {
+      text-align: center;
+      font-size: 0.875rem;
+      color: var(--cinza);
+      padding: 0.5rem 0;
+      min-height: 1.5rem;
+    }
+
+    #resultado { display: none; }
+
+    .secao-titulo {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--cinza);
+      margin-bottom: 0.5rem;
+    }
+
+    .fonte-chip {
+      display: inline-block;
+      background: #eff6ff;
+      color: var(--azul);
+      border: 1px solid #bfdbfe;
+      border-radius: 1rem;
+      padding: 0.25rem 0.625rem;
+      font-size: 0.75rem;
+      margin: 0.25rem 0.25rem 0 0;
+      word-break: break-all;
+    }
+
+    .questao {
+      border: 1px solid var(--borda);
+      border-radius: 0.5rem;
+      padding: 0.75rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .questao-enunciado {
+      font-size: 0.9375rem;
+      margin-bottom: 0.625rem;
+      line-height: 1.5;
+    }
+
+    .alternativa {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.5rem;
+      padding: 0.5rem;
+      border-radius: 0.375rem;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      margin-bottom: 0.25rem;
+    }
+
+    .alternativa input[type=radio] { margin-top: 0.125rem; flex-shrink: 0; }
+
+    .alternativa.correta { background: #f0fdf4; }
+    .alternativa.incorreta { background: #fef2f2; }
+
+    .resolucao {
+      display: none;
+      margin-top: 0.625rem;
+      padding: 0.625rem;
+      background: #f8fafc;
+      border-radius: 0.375rem;
+      font-size: 0.875rem;
+      line-height: 1.5;
+    }
+
+    .resolucao.visivel { display: block; }
+    .resolucao strong { color: var(--verde); }
+
+    .spinner {
+      display: inline-block;
+      width: 1rem;
+      height: 1rem;
+      border: 2px solid var(--borda);
+      border-top-color: var(--azul);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      vertical-align: middle;
+      margin-right: 0.375rem;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .erro-msg {
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      color: var(--erro);
+      border-radius: 0.5rem;
+      padding: 0.75rem;
+      font-size: 0.875rem;
+    }
+  </style>
+</head>
+<body>
+  <header>Estuda.IA</header>
+  <main>
+    <div class="card" id="formulario">
+      <div style="margin-bottom:0.875rem">
+        <label for="tema">Tema ou pergunta</label>
+        <textarea id="tema" placeholder="Ex: desigualdade social no Brasil" maxlength="500"></textarea>
+      </div>
+
+      <div class="row" style="margin-bottom:0.875rem">
+        <div>
+          <label for="disciplina">Disciplina</label>
+          <select id="disciplina">
+            <option value="sociologia">Sociologia</option>
+            <option value="historia">História</option>
+            <option value="geografia">Geografia</option>
+            <option value="filosofia">Filosofia</option>
+            <option value="portugues">Português</option>
+            <option value="literatura">Literatura</option>
+            <option value="biologia">Biologia</option>
+            <option value="quimica">Química</option>
+            <option value="fisica">Física</option>
+            <option value="matematica">Matemática</option>
+          </select>
+        </div>
+        <div>
+          <label for="tipo">Tipo</label>
+          <select id="tipo">
+            <option value="resumo">Resumo</option>
+            <option value="redacao">Redação</option>
+            <option value="dpo">DPO</option>
+            <option value="analise_texto">Análise de Texto</option>
+            <option value="ficha_estudo">Ficha de Estudo</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="banca-wrap" style="margin-bottom:0.875rem;display:none">
+        <label for="banca">Banca</label>
+        <select id="banca">
+          <option value="ENEM">ENEM</option>
+          <option value="FUVEST">FUVEST</option>
+          <option value="UNICAMP">UNICAMP</option>
+          <option value="UNESP">UNESP</option>
+        </select>
+      </div>
+
+      <div id="trecho-wrap" style="margin-bottom:0.875rem;display:none">
+        <label for="trecho">Trecho para análise (opcional)</label>
+        <textarea id="trecho" placeholder="Cole aqui o trecho do texto..." maxlength="2000"></textarea>
+      </div>
+
+      <button id="btn-pesquisar" onclick="pesquisar()">Pesquisar</button>
+    </div>
+
+    <div id="status"></div>
+
+    <div id="resultado" class="card"></div>
+  </main>
+
+  <script>
+    const API = "";  // same origin via Caddy
+
+    document.getElementById("tipo").addEventListener("change", function() {
+      const v = this.value;
+      document.getElementById("banca-wrap").style.display = v === "redacao" ? "block" : "none";
+      document.getElementById("trecho-wrap").style.display = v === "analise_texto" ? "block" : "none";
+    });
+
+    function setStatus(msg, loading) {
+      const el = document.getElementById("status");
+      el.innerHTML = loading ? `<span class="spinner"></span>${msg}` : msg;
+    }
+
+    function pesquisar() {
+      const tema = document.getElementById("tema").value.trim();
+      if (!tema) { setStatus("Digite um tema."); return; }
+
+      const btn = document.getElementById("btn-pesquisar");
+      const tipo = document.getElementById("tipo").value;
+      const banca = tipo === "redacao" ? document.getElementById("banca").value : null;
+      const trecho = tipo === "analise_texto" ? document.getElementById("trecho").value.trim() || null : null;
+
+      btn.disabled = true;
+      setStatus("Iniciando pesquisa...", true);
+      document.getElementById("resultado").style.display = "none";
+      document.getElementById("resultado").innerHTML = "";
+
+      const body = JSON.stringify({ input: tema, disciplina: document.getElementById("disciplina").value, tipo, banca, trecho });
+
+      fetch(API + "/pesquisar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body
+      }).then(resp => {
+        if (!resp.ok) {
+          return resp.text().then(t => { throw new Error(resp.status + ": " + t); });
+        }
+        const reader = resp.body.getReader();
+        const decoder = new TextDecoder();
+        let buf = "";
+
+        function read() {
+          return reader.read().then(({ done, value }) => {
+            if (done) { btn.disabled = false; setStatus(""); return; }
+            buf += decoder.decode(value, { stream: true });
+            const lines = buf.split("\n");
+            buf = lines.pop();
+            for (const line of lines) {
+              if (!line.startsWith("data: ")) continue;
+              const data = line.slice(6);
+              if (data === "[DONE]") { btn.disabled = false; setStatus(""); return; }
+              try {
+                const ev = JSON.parse(data);
+                handleEvent(ev);
+              } catch {}
+            }
+            return read();
+          });
+        }
+        return read();
+      }).catch(err => {
+        btn.disabled = false;
+        setStatus("");
+        const res = document.getElementById("resultado");
+        res.style.display = "block";
+        res.innerHTML = `<div class="erro-msg">Erro: ${err.message}</div>`;
+      });
+    }
+
+    function handleEvent(ev) {
+      if (ev.status === "iniciando") setStatus("Iniciando...", true);
+      else if (ev.status === "processando") setStatus("Coletando fontes e processando...", true);
+      else if (ev.status === "concluido") renderOutput(ev.output);
+      else if (ev.status === "erro") {
+        setStatus("");
+        document.getElementById("resultado").style.display = "block";
+        document.getElementById("resultado").innerHTML = `<div class="erro-msg">${ev.mensagem || "Erro desconhecido"}</div>`;
+      }
+    }
+
+    function renderOutput(output) {
+      setStatus("");
+      const res = document.getElementById("resultado");
+      res.style.display = "block";
+
+      if (!output || Object.keys(output).length === 0) {
+        res.innerHTML = "<p>Nenhum resultado encontrado.</p>";
+        return;
+      }
+
+      let html = "";
+      const tipo = document.getElementById("tipo").value;
+
+      if (tipo === "resumo" && output.titulo) {
+        html += `<div class="secao-titulo">Resumo</div>`;
+        html += `<h2 style="font-size:1.125rem;font-weight:700;margin-bottom:0.5rem">${esc(output.titulo)}</h2>`;
+        if (output.topicos?.length) {
+          html += `<ul style="margin:0.5rem 0 0.75rem 1rem;font-size:0.9375rem">` +
+            output.topicos.map(t => `<li>${esc(t)}</li>`).join("") + `</ul>`;
+        }
+        if (output.texto_resumido) html += `<p style="line-height:1.6;font-size:0.9375rem">${esc(output.texto_resumido)}</p>`;
+      } else if (tipo === "ficha_estudo") {
+        if (output.resumo) html += `<p style="margin-bottom:0.75rem;line-height:1.6">${esc(output.resumo)}</p>`;
+        if (output.exercicios?.length) {
+          html += `<div class="secao-titulo">Exercícios</div>`;
+          output.exercicios.forEach((q, i) => {
+            html += renderQuestao(q, i);
+          });
+        }
+      } else if (tipo === "redacao") {
+        if (output.introducao) html += `<div class="secao-titulo">Introdução</div><p style="margin-bottom:0.75rem;line-height:1.6">${esc(output.introducao)}</p>`;
+        if (output.desenvolvimento?.length) {
+          html += `<div class="secao-titulo">Desenvolvimento</div>`;
+          output.desenvolvimento.forEach(p => {
+            html += `<p style="margin-bottom:0.5rem;line-height:1.6">${esc(p)}</p>`;
+          });
+        }
+        if (output.conclusao) html += `<div class="secao-titulo">Conclusão</div><p style="line-height:1.6">${esc(output.conclusao)}</p>`;
+      } else if (tipo === "dpo") {
+        if (output.tese) html += `<div class="secao-titulo">Tese</div><p style="font-weight:600;margin-bottom:0.75rem">${esc(output.tese)}</p>`;
+        if (output.blocos?.length) {
+          html += `<div class="secao-titulo">Argumentos</div>`;
+          output.blocos.forEach(b => {
+            html += `<div style="margin-bottom:0.5rem;padding:0.5rem;border-left:3px solid var(--azul)">`;
+            html += `<p style="font-size:0.9375rem">${esc(b.argumento)}</p>`;
+            if (b.dado_estatistico) html += `<p style="font-size:0.8125rem;color:var(--cinza);margin-top:0.25rem">${esc(b.dado_estatistico)}</p>`;
+            html += `</div>`;
+          });
+        }
+      } else if (tipo === "analise_texto") {
+        if (output.titulo_obra) html += `<p style="font-weight:700">${esc(output.titulo_obra)}${output.autor ? ` — ${esc(output.autor)}` : ""}</p>`;
+        if (output.recursos_estilisticos?.length) {
+          html += `<div class="secao-titulo" style="margin-top:0.75rem">Recursos Estilísticos</div>`;
+          output.recursos_estilisticos.forEach(r => {
+            html += `<div style="margin-bottom:0.5rem"><strong>${esc(r.recurso)}</strong>: ${esc(r.efeito)}</div>`;
+          });
+        }
+        if (output.limitacao) html += `<p style="font-size:0.8125rem;color:var(--cinza);margin-top:0.5rem;font-style:italic">${esc(output.limitacao)}</p>`;
+      }
+
+      if (output.fontes?.length) {
+        html += `<div class="secao-titulo" style="margin-top:0.875rem">Fontes</div>`;
+        output.fontes.forEach(f => {
+          html += `<a class="fonte-chip" href="${esc(f.url || '#')}" target="_blank" rel="noopener noreferrer">${esc(f.fonte)}</a>`;
+        });
+      }
+
+      res.innerHTML = html || `<pre style="font-size:0.75rem;overflow:auto">${esc(JSON.stringify(output, null, 2))}</pre>`;
+      addQuestaoListeners();
+    }
+
+    function renderQuestao(q, idx) {
+      const letras = ["a", "b", "c", "d", "e"];
+      const nomeGrupo = `q${idx}`;
+      let html = `<div class="questao" id="questao-${idx}">`;
+      html += `<div class="questao-enunciado"><strong>${idx + 1}.</strong> ${esc(q.enunciado)}</div>`;
+      letras.forEach(l => {
+        const texto = q.alternativas?.[l] || "";
+        html += `<label class="alternativa" data-letra="${l}" data-grupo="${nomeGrupo}" data-idx="${idx}">
+          <input type="radio" name="${nomeGrupo}" value="${l}"> ${l.toUpperCase()}) ${esc(texto)}
+        </label>`;
+      });
+      html += `<div class="resolucao" id="res-${idx}">`;
+      if (q.resolucao?.explicacao) html += `<strong>✓ Resposta: ${(q.resolucao.resposta_correta || "").toUpperCase()}</strong><br>${esc(q.resolucao.explicacao)}`;
+      if (q.resolucao?.passo_a_passo?.length) {
+        html += `<ol style="margin:0.375rem 0 0 1rem;font-size:0.875rem">` +
+          q.resolucao.passo_a_passo.map(p => `<li>${esc(p)}</li>`).join("") + `</ol>`;
+      }
+      html += `</div></div>`;
+      return html;
+    }
+
+    function addQuestaoListeners() {
+      document.querySelectorAll(".alternativa").forEach(el => {
+        el.addEventListener("click", function() {
+          const idx = this.dataset.idx;
+          const grupo = this.dataset.grupo;
+          const letra = this.dataset.letra;
+          const questao = document.getElementById(`questao-${idx}`);
+          if (!questao) return;
+
+          const radioInput = this.querySelector("input[type=radio]");
+          if (radioInput) radioInput.checked = true;
+
+          // find correct answer
+          const res = document.getElementById(`res-${idx}`);
+          const correta = res?.textContent.match(/Resposta: ([A-E])/)?.[1]?.toLowerCase();
+
+          questao.querySelectorAll(".alternativa").forEach(a => {
+            a.classList.remove("correta", "incorreta");
+            if (a.dataset.letra === correta) a.classList.add("correta");
+            else if (a.dataset.letra === letra && letra !== correta) a.classList.add("incorreta");
+          });
+
+          if (res) res.classList.add("visivel");
+        });
+      });
+    }
+
+    function esc(str) {
+      if (!str) return "";
+      return String(str).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+    }
+
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/sw.js").catch(() => {});
+    }
+  </script>
+</body>
+</html>

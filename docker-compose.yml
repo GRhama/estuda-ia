@@ -1,0 +1,63 @@
+version: "3.9"
+
+services:
+  api:
+    build: .
+    restart: unless-stopped
+    expose:
+      - "8000"
+    environment:
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - MODEL=${MODEL:-claude-sonnet-4-20250514}
+      - RATE_LIMIT_FREE=${RATE_LIMIT_FREE:-5}
+      - RATE_LIMIT_PAID=${RATE_LIMIT_PAID:-30}
+      - DAILY_COST_CAP_USD=${DAILY_COST_CAP_USD:-5.00}
+      - DB_PATH=/app/data/estuda.db
+      - IP_SALT=${IP_SALT}
+      - CORS_ORIGINS=${CORS_ORIGINS:-https://estudaia.app}
+    volumes:
+      - db_data:/app/data
+      - qdrant_data:/app/data/qdrant
+    depends_on:
+      - qdrant
+    networks:
+      - internal
+    user: "1000:1000"
+
+  qdrant:
+    image: qdrant/qdrant:latest
+    restart: unless-stopped
+    expose:
+      - "6333"
+    volumes:
+      - qdrant_data:/qdrant/storage
+    networks:
+      - internal
+    environment:
+      - QDRANT__SERVICE__HOST=127.0.0.1
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./frontend:/srv/frontend:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - api
+    networks:
+      - internal
+
+volumes:
+  db_data:
+  qdrant_data:
+  caddy_data:
+  caddy_config:
+
+networks:
+  internal:
+    driver: bridge
