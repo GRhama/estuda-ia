@@ -12,6 +12,7 @@ def _res_exatas():
         resposta_correta="a",
         explicacao="resolução detalhada",
         passo_a_passo=["passo 1: isolar variável", "passo 2: calcular"],
+        por_que_incorretas={},
     )
 
 
@@ -19,6 +20,7 @@ def _res_humanas():
     return ResolucaoQuestao(
         resposta_correta="b",
         explicacao="contexto histórico",
+        passo_a_passo=[],
         por_que_incorretas={"a": "fora do período", "c": "confunde conceitos", "d": "incorreto", "e": "errado"},
     )
 
@@ -33,12 +35,12 @@ class TestAlternativasQuestao:
 class TestResolucaoQuestao:
     @pytest.mark.parametrize("letra", ["a", "b", "c", "d", "e"])
     def test_letras_validas(self, letra):
-        r = ResolucaoQuestao(resposta_correta=letra, explicacao="ok")
+        r = ResolucaoQuestao(resposta_correta=letra, explicacao="ok", passo_a_passo=[], por_que_incorretas={})
         assert r.resposta_correta == letra
 
     def test_letra_invalida_levanta_erro(self):
         with pytest.raises(ValidationError):
-            ResolucaoQuestao(resposta_correta="f", explicacao="ok")
+            ResolucaoQuestao(resposta_correta="f", explicacao="ok", passo_a_passo=[], por_que_incorretas={})
 
 
 class TestExercicioMultiplaEscolha:
@@ -54,7 +56,8 @@ class TestExercicioMultiplaEscolha:
         assert e.resolucao.passo_a_passo is not None
 
     def test_exatas_sem_passo_a_passo_levanta_erro(self):
-        res = ResolucaoQuestao(resposta_correta="a", explicacao="ok")
+        # passo_a_passo vazio [] → model_validator rejeita para exatas
+        res = ResolucaoQuestao(resposta_correta="a", explicacao="ok", passo_a_passo=[], por_que_incorretas={})
         with pytest.raises(ValidationError) as exc_info:
             ExercicioMultiplaEscolha(
                 enunciado="calcule x",
@@ -77,7 +80,8 @@ class TestExercicioMultiplaEscolha:
         assert e.resolucao.por_que_incorretas is not None
 
     def test_humanas_sem_por_que_incorretas_levanta_erro(self):
-        res = ResolucaoQuestao(resposta_correta="b", explicacao="ok")
+        # por_que_incorretas vazio {} → model_validator rejeita para humanas
+        res = ResolucaoQuestao(resposta_correta="b", explicacao="ok", passo_a_passo=[], por_que_incorretas={})
         with pytest.raises(ValidationError) as exc_info:
             ExercicioMultiplaEscolha(
                 enunciado="qual o contexto?",
@@ -89,7 +93,7 @@ class TestExercicioMultiplaEscolha:
         assert "por_que_incorretas" in str(exc_info.value)
 
     def test_linguagens_sem_restricao_extra_ok(self):
-        res = ResolucaoQuestao(resposta_correta="c", explicacao="ok")
+        res = ResolucaoQuestao(resposta_correta="c", explicacao="ok", passo_a_passo=[], por_que_incorretas={})
         e = ExercicioMultiplaEscolha(
             enunciado="identifique o recurso estilístico",
             alternativas=_alt(),

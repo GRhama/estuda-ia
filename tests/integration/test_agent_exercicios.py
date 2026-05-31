@@ -21,7 +21,7 @@ def _ex_exatas(conceito: str = "cálculo"):
         enunciado="Calcule x",
         alternativas=_alt(),
         resolucao=ResolucaoQuestao(
-            resposta_correta="a", explicacao="ok", passo_a_passo=["p1"]
+            resposta_correta="a", explicacao="ok", passo_a_passo=["p1"], por_que_incorretas={}
         ),
         area="exatas",
         conceito=conceito,
@@ -35,6 +35,7 @@ def _ex_humanas(conceito: str = "história"):
         resolucao=ResolucaoQuestao(
             resposta_correta="b",
             explicacao="ok",
+            passo_a_passo=[],
             por_que_incorretas={"a": "errado", "c": "errado", "d": "errado", "e": "errado"},
         ),
         area="humanas",
@@ -46,7 +47,7 @@ def _ex_linguagens(conceito: str = "metáfora"):
     return ExercicioMultiplaEscolha(
         enunciado="Identifique o recurso",
         alternativas=_alt(),
-        resolucao=ResolucaoQuestao(resposta_correta="c", explicacao="ok"),
+        resolucao=ResolucaoQuestao(resposta_correta="c", explicacao="ok", passo_a_passo=[], por_que_incorretas={}),
         area="linguagens",
         conceito=conceito,
     )

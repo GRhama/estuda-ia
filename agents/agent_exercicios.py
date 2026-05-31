@@ -2,8 +2,15 @@ import os
 import anthropic
 import instructor
 from loguru import logger
+from openai import AsyncOpenAI
 from graph import GraphState
 from agents.schemas.exercicio import ExercicioMultiplaEscolha
+
+_GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/openai/"
+
+
+def _is_gemini(model: str) -> bool:
+    return model.startswith("gemini")
 
 _TOKEN_PER_EXERCICIO = 800
 _MAX_TENTATIVAS = 3
@@ -41,7 +48,13 @@ def _build_prompt(
     )
 
 
-def _make_instructor_client() -> instructor.AsyncInstructor:
+def _make_instructor_client(model: str = "") -> instructor.AsyncInstructor:
+    if _is_gemini(model):
+        oai = AsyncOpenAI(
+            api_key=os.environ.get("GEMINI_API_KEY", ""),
+            base_url=_GEMINI_BASE_URL,
+        )
+        return instructor.from_openai(oai)
     anth = anthropic.AsyncAnthropic(api_key=os.environ.get("ANTHROPIC_API_KEY", ""))
     return instructor.from_anthropic(anth)
 
@@ -61,12 +74,20 @@ async def _gerar_exercicio_com_retry(
 
     for attempt in range(max_tentativas):
         try:
-            result = await client.messages.create(
-                model=model,
-                max_tokens=_TOKEN_PER_EXERCICIO,
-                messages=[{"role": "user", "content": prompt}],
-                response_model=ExercicioMultiplaEscolha,
-            )
+            if _is_gemini(model):
+                result = await client.chat.completions.create(
+                    model=model,
+                    max_tokens=_TOKEN_PER_EXERCICIO,
+                    messages=[{"role": "user", "content": prompt}],
+                    response_model=ExercicioMultiplaEscolha,
+                )
+            else:
+                result = await client.messages.create(
+                    model=model,
+                    max_tokens=_TOKEN_PER_EXERCICIO,
+                    messages=[{"role": "user", "content": prompt}],
+                    response_model=ExercicioMultiplaEscolha,
+                )
             if result.conceito not in conceitos_usados:
                 return result
             logger.warning(
@@ -94,7 +115,7 @@ async def run(state: GraphState) -> GraphState:
 
     logger.debug(f"[{rid}] agent_exercicios: gerando 15 questões (5 exatas / 7 humanas / 3 linguagens)")
 
-    client = _make_instructor_client()
+    client = _make_instructor_client(model)
     exercicios: list[ExercicioMultiplaEscolha] = []
 
     for area, count in _AREAS:

@@ -10,11 +10,11 @@ def _alt():
 
 def _exercicio(area: str, conceito: str) -> ExercicioMultiplaEscolha:
     if area == "exatas":
-        res = ResolucaoQuestao(resposta_correta="a", explicacao="ok", passo_a_passo=["p1"])
+        res = ResolucaoQuestao(resposta_correta="a", explicacao="ok", passo_a_passo=["p1"], por_que_incorretas={})
     elif area == "humanas":
-        res = ResolucaoQuestao(resposta_correta="b", explicacao="ok", por_que_incorretas={"a": "e"})
+        res = ResolucaoQuestao(resposta_correta="b", explicacao="ok", passo_a_passo=[], por_que_incorretas={"a": "e"})
     else:
-        res = ResolucaoQuestao(resposta_correta="c", explicacao="ok")
+        res = ResolucaoQuestao(resposta_correta="c", explicacao="ok", passo_a_passo=[], por_que_incorretas={})
     return ExercicioMultiplaEscolha(
         enunciado="questão", alternativas=_alt(), resolucao=res, area=area, conceito=conceito
     )

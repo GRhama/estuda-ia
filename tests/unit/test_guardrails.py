@@ -183,7 +183,7 @@ class TestRegra7Exercicios:
     """Exercícios: passo_a_passo/por_que_incorretas/distribuição 5/7/3."""
 
     def test_exatas_sem_passo_a_passo_invalido(self):
-        res = ResolucaoQuestao(resposta_correta="a", explicacao="ok")
+        res = ResolucaoQuestao(resposta_correta="a", explicacao="ok", passo_a_passo=[], por_que_incorretas={})
         with pytest.raises(ValidationError) as exc_info:
             ExercicioMultiplaEscolha(
                 enunciado="2+2?", alternativas=_alt(),
@@ -192,7 +192,7 @@ class TestRegra7Exercicios:
         assert "passo_a_passo" in str(exc_info.value)
 
     def test_humanas_sem_por_que_incorretas_invalido(self):
-        res = ResolucaoQuestao(resposta_correta="b", explicacao="ok")
+        res = ResolucaoQuestao(resposta_correta="b", explicacao="ok", passo_a_passo=[], por_que_incorretas={})
         with pytest.raises(ValidationError) as exc_info:
             ExercicioMultiplaEscolha(
                 enunciado="quem foi?", alternativas=_alt(),
@@ -203,17 +203,17 @@ class TestRegra7Exercicios:
     def test_distribuicao_correta_aceita(self):
         exercicios = []
         for i in range(5):
-            res = ResolucaoQuestao(resposta_correta="a", explicacao="ok", passo_a_passo=["p"])
+            res = ResolucaoQuestao(resposta_correta="a", explicacao="ok", passo_a_passo=["p"], por_que_incorretas={})
             exercicios.append(ExercicioMultiplaEscolha(
                 enunciado="q", alternativas=_alt(), resolucao=res, area="exatas", conceito=f"e{i}"
             ))
         for i in range(7):
-            res = ResolucaoQuestao(resposta_correta="b", explicacao="ok", por_que_incorretas={"a": "e"})
+            res = ResolucaoQuestao(resposta_correta="b", explicacao="ok", passo_a_passo=[], por_que_incorretas={"a": "e"})
             exercicios.append(ExercicioMultiplaEscolha(
                 enunciado="q", alternativas=_alt(), resolucao=res, area="humanas", conceito=f"h{i}"
             ))
         for i in range(3):
-            res = ResolucaoQuestao(resposta_correta="c", explicacao="ok")
+            res = ResolucaoQuestao(resposta_correta="c", explicacao="ok", passo_a_passo=[], por_que_incorretas={})
             exercicios.append(ExercicioMultiplaEscolha(
                 enunciado="q", alternativas=_alt(), resolucao=res, area="linguagens", conceito=f"l{i}"
             ))
@@ -223,7 +223,7 @@ class TestRegra7Exercicios:
     def test_distribuicao_incorreta_levanta_erro(self):
         exercicios = []
         for i in range(15):
-            res = ResolucaoQuestao(resposta_correta="a", explicacao="ok", passo_a_passo=["p"])
+            res = ResolucaoQuestao(resposta_correta="a", explicacao="ok", passo_a_passo=["p"], por_que_incorretas={})
             exercicios.append(ExercicioMultiplaEscolha(
                 enunciado="q", alternativas=_alt(), resolucao=res, area="exatas", conceito=f"c{i}"
             ))

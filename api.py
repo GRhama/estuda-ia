@@ -29,6 +29,7 @@ class Settings(BaseSettings):
     model_config = ConfigDict(env_file=".env", extra="ignore")
 
     anthropic_api_key: str = "sk-placeholder"
+    gemini_api_key: Optional[str] = None
     model: str = "claude-sonnet-4-6"
     rate_limit_free: int = 5
     rate_limit_paid: int = 30
