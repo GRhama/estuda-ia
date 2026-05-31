@@ -6,7 +6,8 @@ services:
     expose:
       - "8000"
     environment:
-      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - GROQ_API_KEY=${GROQ_API_KEY:-}
       - MODEL=${MODEL:-claude-sonnet-4-6}
       - RATE_LIMIT_FREE=${RATE_LIMIT_FREE:-5}
       - RATE_LIMIT_PAID=${RATE_LIMIT_PAID:-30}
