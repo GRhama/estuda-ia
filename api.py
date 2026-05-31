@@ -5,7 +5,7 @@ import os
 import sqlite3
 import uuid
 from contextlib import asynccontextmanager
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 from typing import Optional
 
 from fastapi import FastAPI, HTTPException, Request
@@ -14,6 +14,7 @@ from fastapi.responses import StreamingResponse
 from loguru import logger
 from pydantic import BaseModel
 from pydantic_settings import BaseSettings
+from pydantic import ConfigDict
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
@@ -25,16 +26,14 @@ from core.sanitizer import sanitize_user_input, word_block_check
 # ─── settings ─────────────────────────────────────────────────────────────────
 
 class Settings(BaseSettings):
+    model_config = ConfigDict(env_file=".env", extra="ignore")
+
     anthropic_api_key: str = "sk-placeholder"
-    model: str = "claude-sonnet-4-20250514"
+    model: str = "claude-sonnet-4-6"
     rate_limit_free: int = 5
     rate_limit_paid: int = 30
     daily_cost_cap_usd: float = 5.00
     debug: bool = False
-
-    class Config:
-        env_file = ".env"
-        extra = "ignore"
 
 
 settings = Settings()
@@ -97,7 +96,7 @@ def _record_request(
     db_path: str = DB_PATH,
 ) -> None:
     today = date.today().isoformat()
-    now = datetime.utcnow().isoformat()
+    now = datetime.now(timezone.utc).isoformat()
     try:
         conn = sqlite3.connect(db_path)
         conn.execute(

@@ -1,7 +1,10 @@
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
-addopts = "--cov=agents --cov=core --cov=graph --cov-report=term-missing"
+addopts = "--cov=agents --cov=core --cov=graph --cov-report=term-missing -m 'not real_api'"
+markers = [
+    "real_api: testes que batem APIs reais — rodam apenas em PR/CI explícito",
+]
 
 [tool.coverage.run]
 omit = ["tests/*", ".venv/*"]

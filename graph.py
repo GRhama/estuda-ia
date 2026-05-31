@@ -53,7 +53,18 @@ async def _agent_exercicios_node(state: GraphState) -> GraphState:
     return await run(state)
 
 
+async def _fallback_node(state: GraphState) -> GraphState:
+    rid = state["request_id"]
+    logger.warning(f"[{rid}] graph: fallback — chunks_rag vazio, sem chamada ao LLM")
+    return {**state, "output": {
+        "mensagem": "Informação não localizada em fonte oficial",
+        "fontes": [],
+    }}
+
+
 def _route_after_rag(state: GraphState) -> str:
+    if not state.get("chunks_rag"):
+        return "fallback"
     return "agent_analista" if state.get("tipo") == "analise_texto" else "agent_redator"
 
 
@@ -68,11 +79,13 @@ builder.add_node("agent_rag", _agent_rag_node)
 builder.add_node("agent_redator", _agent_redator_node)
 builder.add_node("agent_analista", _agent_analista_node)
 builder.add_node("agent_exercicios", _agent_exercicios_node)
+builder.add_node("fallback", _fallback_node)
 
 builder.set_entry_point("router")
 builder.add_edge("router", "agent_dados")
 builder.add_edge("agent_dados", "agent_rag")
 builder.add_conditional_edges("agent_rag", _route_after_rag)
+builder.add_edge("fallback", END)
 builder.add_conditional_edges("agent_redator", _should_run_exercicios)
 builder.add_conditional_edges("agent_analista", _should_run_exercicios)
 builder.add_edge("agent_exercicios", END)
