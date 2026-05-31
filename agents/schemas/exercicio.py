@@ -1,5 +1,5 @@
-from typing import Optional, Dict, List, Literal
-from pydantic import BaseModel, model_validator
+from typing import Dict, List, Literal
+from pydantic import BaseModel, Field, model_validator
 
 
 class AlternativasQuestao(BaseModel):
@@ -13,8 +13,14 @@ class AlternativasQuestao(BaseModel):
 class ResolucaoQuestao(BaseModel):
     resposta_correta: Literal["a", "b", "c", "d", "e"]
     explicacao: str
-    passo_a_passo: Optional[List[str]] = None
-    por_que_incorretas: Optional[Dict[str, str]] = None
+    passo_a_passo: List[str] = Field(
+        default_factory=list,
+        description="Obrigatório para questões de exatas: liste cada passo da resolução.",
+    )
+    por_que_incorretas: Dict[str, str] = Field(
+        default_factory=dict,
+        description="Obrigatório para questões de humanas: explique por que cada alternativa errada está incorreta.",
+    )
 
 
 class ExercicioMultiplaEscolha(BaseModel):

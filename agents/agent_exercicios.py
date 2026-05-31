@@ -41,13 +41,13 @@ def _build_prompt(
     )
 
 
-def _make_instructor_client() -> instructor.Instructor:
-    anth = anthropic.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY", ""))
+def _make_instructor_client() -> instructor.AsyncInstructor:
+    anth = anthropic.AsyncAnthropic(api_key=os.environ.get("ANTHROPIC_API_KEY", ""))
     return instructor.from_anthropic(anth)
 
 
-def _gerar_exercicio_com_retry(
-    client: instructor.Instructor,
+async def _gerar_exercicio_com_retry(
+    client: instructor.AsyncInstructor,
     model: str,
     tema: str,
     area: str,
@@ -61,7 +61,7 @@ def _gerar_exercicio_com_retry(
 
     for attempt in range(max_tentativas):
         try:
-            result = client.chat.completions.create(
+            result = await client.messages.create(
                 model=model,
                 max_tokens=_TOKEN_PER_EXERCICIO,
                 messages=[{"role": "user", "content": prompt}],
@@ -90,7 +90,7 @@ async def run(state: GraphState) -> GraphState:
     rid = state["request_id"]
     tema = state["input"]
     chunks = state["chunks_rag"]
-    model = os.environ.get("MODEL", "claude-sonnet-4-20250514")
+    model = os.environ.get("MODEL", "claude-sonnet-4-6")
 
     logger.debug(f"[{rid}] agent_exercicios: gerando 15 questões (5 exatas / 7 humanas / 3 linguagens)")
 
@@ -100,7 +100,7 @@ async def run(state: GraphState) -> GraphState:
     for area, count in _AREAS:
         for _ in range(count):
             conceitos_usados = [e.conceito for e in exercicios]
-            ex = _gerar_exercicio_com_retry(client, model, tema, area, chunks, conceitos_usados, rid)
+            ex = await _gerar_exercicio_com_retry(client, model, tema, area, chunks, conceitos_usados, rid)
             exercicios.append(ex)
 
     logger.debug(f"[{rid}] agent_exercicios: 15 questões OK")

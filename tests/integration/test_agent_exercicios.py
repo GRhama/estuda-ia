@@ -1,6 +1,6 @@
 """Testes de integração — agent_exercicios + CA-08 + CA-09."""
 import pytest
-from unittest.mock import MagicMock, call
+from unittest.mock import MagicMock, AsyncMock
 from pydantic import ValidationError
 from agents.agent_exercicios import run, _gerar_exercicio_com_retry, _build_prompt
 from agents.schemas.exercicio import (
@@ -65,7 +65,7 @@ def _make_15_side_effects():
 
 def _mock_client(side_effects):
     m = MagicMock()
-    m.chat.completions.create.side_effect = side_effects
+    m.messages.create = AsyncMock(side_effect=side_effects)
     return m
 
 
@@ -110,43 +110,43 @@ class TestBuildPrompt:
 
 # ─── _gerar_exercicio_com_retry ───────────────────────────────────────────────
 
+@pytest.mark.asyncio
 class TestGerarExercicioComRetry:
-    def test_sucesso_primeira_tentativa(self):
+    async def test_sucesso_primeira_tentativa(self):
         ex = _ex_exatas("cálculo")
         client = _mock_client([ex])
-        result = _gerar_exercicio_com_retry(client, "model", "tema", "exatas", [], [], RID)
+        result = await _gerar_exercicio_com_retry(client, "model", "tema", "exatas", [], [], RID)
         assert result.conceito == "cálculo"
-        assert client.chat.completions.create.call_count == 1
+        assert client.messages.create.call_count == 1
 
-    def test_retry_em_excecao_segunda_tentativa_ok(self):
+    async def test_retry_em_excecao_segunda_tentativa_ok(self):
         ex = _ex_exatas("cálculo")
         client = _mock_client([RuntimeError("falhou"), ex])
-        result = _gerar_exercicio_com_retry(client, "model", "tema", "exatas", [], [], RID)
+        result = await _gerar_exercicio_com_retry(client, "model", "tema", "exatas", [], [], RID)
         assert result.conceito == "cálculo"
-        assert client.chat.completions.create.call_count == 2
+        assert client.messages.create.call_count == 2
 
-    def test_max_3_tentativas_propaga_excecao(self):
+    async def test_max_3_tentativas_propaga_excecao(self):
         client = _mock_client([RuntimeError("falhou")] * 3)
         with pytest.raises(RuntimeError, match="falhou"):
-            _gerar_exercicio_com_retry(client, "model", "tema", "exatas", [], [], RID)
-        assert client.chat.completions.create.call_count == 3
+            await _gerar_exercicio_com_retry(client, "model", "tema", "exatas", [], [], RID)
+        assert client.messages.create.call_count == 3
 
-    def test_conceito_duplicado_tenta_novamente(self):
-        # primeiro retorna conceito já usado, segundo retorna novo
+    async def test_conceito_duplicado_tenta_novamente(self):
         ex_dup = _ex_exatas("cálculo")
         ex_novo = _ex_exatas("geometria")
         client = _mock_client([ex_dup, ex_novo])
-        result = _gerar_exercicio_com_retry(
+        result = await _gerar_exercicio_com_retry(
             client, "model", "tema", "exatas", [], ["cálculo"], RID
         )
         assert result.conceito == "geometria"
-        assert client.chat.completions.create.call_count == 2
+        assert client.messages.create.call_count == 2
 
-    def test_duplicata_persiste_3_tentativas_raise(self):
+    async def test_duplicata_persiste_3_tentativas_raise(self):
         ex_dup = _ex_exatas("cálculo")
         client = _mock_client([ex_dup, ex_dup, ex_dup])
         with pytest.raises(RuntimeError):
-            _gerar_exercicio_com_retry(
+            await _gerar_exercicio_com_retry(
                 client, "model", "tema", "exatas", [], ["cálculo"], RID
             )
 
@@ -226,7 +226,7 @@ class TestCA09GuardrailRegra7:
         mocker.patch("agents.agent_exercicios._make_instructor_client", return_value=mock_c)
         result = await run(BASE_STATE)
         # 1 retry extra = 16 total calls
-        assert mock_c.chat.completions.create.call_count == 16
+        assert mock_c.messages.create.call_count == 16
         assert len(result["output"]["exercicios"]) == 15
 
     async def test_ca09_conceitos_unicos(self, mocker):
