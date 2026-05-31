@@ -69,6 +69,7 @@ ALLOWED_HOSTS = frozenset({
     "www.gutenberg.org",
     "gutendex.com",
     "www.dominiopublico.gov.br",
+    "agenciabrasil.ebc.com.br",
 })
 
 _PRIVATE_RANGES = [

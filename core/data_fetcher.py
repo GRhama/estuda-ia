@@ -113,16 +113,24 @@ async def fetch_unesco(client: httpx.AsyncClient, rid: str, tema: str) -> dict:
 async def fetch_wikidata(client: httpx.AsyncClient, rid: str, tema: str) -> dict:
     import urllib.parse
     sparql = f"""
-    SELECT ?item ?itemLabel ?description WHERE {{
-      ?item wdt:P17 wd:Q155 .
-      ?item rdfs:label "{tema}"@pt .
-      OPTIONAL {{ ?item schema:description ?description . FILTER(LANG(?description)="pt") }}
+    SELECT ?item ?itemLabel ?itemDescription WHERE {{
+      SERVICE wikibase:mwapi {{
+        bd:serviceParam wikibase:endpoint "www.wikidata.org" ;
+                        wikibase:api "EntitySearch" ;
+                        mwapi:search "{tema}" ;
+                        mwapi:language "pt" .
+        ?item wikibase:apiOutputItem mwapi:item .
+      }}
       SERVICE wikibase:label {{ bd:serviceParam wikibase:language "pt,en". }}
     }} LIMIT 5
     """
     url = "https://query.wikidata.org/sparql?query=" + urllib.parse.quote(sparql) + "&format=json"
+    headers = {
+        "Accept": "application/sparql-results+json",
+        "User-Agent": "EstudaIA/1.0 (educational platform)",
+    }
     try:
-        r = await safe_fetch(client, url, headers={"Accept": "application/sparql-results+json"})
+        r = await safe_fetch(client, url, headers=headers)
         r.raise_for_status()
         return _ok(r.text, "Wikidata", url)
     except Exception as e:
@@ -156,14 +164,26 @@ async def fetch_onu(client: httpx.AsyncClient, rid: str, tema: str) -> dict:
 
 async def fetch_wikipedia_pt(client: httpx.AsyncClient, rid: str, tema: str) -> dict:
     import urllib.parse
-    url = (
-        "https://pt.wikipedia.org/w/api.php?action=query&prop=extracts"
-        f"&exintro=1&explaintext=1&titles={urllib.parse.quote(tema)}&format=json"
+    headers = {"User-Agent": "EstudaIA/1.0 (educational platform)"}
+    search_url = (
+        "https://pt.wikipedia.org/w/api.php?action=query&list=search"
+        f"&srsearch={urllib.parse.quote(tema)}&utf8=1&format=json"
     )
     try:
-        r = await safe_fetch(client, url, headers={"User-Agent": "EstudaIA/1.0 (educational platform)"})
+        r = await safe_fetch(client, search_url, headers=headers)
         r.raise_for_status()
-        return _ok(r.text, "Wikipedia PT", url)
+        results = r.json().get("query", {}).get("search", [])
+        if not results:
+            logger.warning(f"[{rid}] wikipedia_pt: sem resultados para '{tema}'")
+            return {}
+        pageid = results[0]["pageid"]
+        extract_url = (
+            f"https://pt.wikipedia.org/w/api.php?action=query&prop=extracts"
+            f"&exintro=1&explaintext=1&pageids={pageid}&format=json"
+        )
+        r2 = await safe_fetch(client, extract_url, headers=headers)
+        r2.raise_for_status()
+        return _ok(r2.text, "Wikipedia PT", extract_url)
     except Exception as e:
         logger.warning(f"[{rid}] wikipedia_pt falhou: {type(e).__name__}")
         return {}
@@ -171,12 +191,13 @@ async def fetch_wikipedia_pt(client: httpx.AsyncClient, rid: str, tema: str) -> 
 
 async def fetch_wikipedia_en(client: httpx.AsyncClient, rid: str, tema: str) -> dict:
     import urllib.parse
+    headers = {"User-Agent": "EstudaIA/1.0 (educational platform)"}
     url = (
         "https://en.wikipedia.org/w/api.php?action=query&prop=extracts"
         f"&exintro=1&explaintext=1&titles={urllib.parse.quote(tema)}&format=json"
     )
     try:
-        r = await safe_fetch(client, url)
+        r = await safe_fetch(client, url, headers=headers)
         r.raise_for_status()
         return _ok(r.text, "Wikipedia EN", url)
     except Exception as e:

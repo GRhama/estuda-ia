@@ -213,9 +213,12 @@ class TestFetchONU:
 class TestFetchWikipediaPT:
     @respx.mock
     async def test_retorna_dado(self):
-        respx.get(_pat("pt.wikipedia.org")).mock(
-            return_value=httpx.Response(200, text=_TEXT)
+        # Two-step: search returns pageid, extract returns text
+        search_resp = httpx.Response(
+            200, json={"query": {"search": [{"pageid": 123, "title": "Desigualdade social"}]}}
         )
+        extract_resp = httpx.Response(200, text=_TEXT)
+        respx.get(_pat("pt.wikipedia.org")).mock(side_effect=[search_resp, extract_resp])
         async with httpx.AsyncClient() as c:
             r = await fetch_wikipedia_pt(c, RID, TEMA)
         assert r["fonte"] == "Wikipedia PT"
