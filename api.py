@@ -31,7 +31,7 @@ class Settings(BaseSettings):
     anthropic_api_key: str = "sk-placeholder"
     groq_api_key: Optional[str] = None
     model: str = "claude-sonnet-4-6"
-    rate_limit_free: int = 5
+    rate_limit_free: int = 100
     rate_limit_paid: int = 30
     daily_cost_cap_usd: float = 5.00
     debug: bool = False
