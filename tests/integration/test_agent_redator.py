@@ -1,6 +1,6 @@
 """Testes de integração — agent_redator com instructor mockado."""
 import pytest
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, AsyncMock, patch
 from agents.agent_redator import run, _get_schema, _build_prompt, TOKEN_BUDGET
 from agents.schemas.redacao_enem import RedacaoENEM, PropostaIntervencaoENEM
 from agents.schemas.redacao_fuvest import RedacaoFUVEST
@@ -62,7 +62,7 @@ def _mock_redacao_enem():
 
 def _make_instructor_mock(return_val):
     mock_client = MagicMock()
-    mock_client.chat.completions.create.return_value = return_val
+    mock_client.messages.create = AsyncMock(return_value=return_val)
     return mock_client
 
 
@@ -147,12 +147,12 @@ class TestAgentRedatorRun:
 
         await run({**BASE_STATE, "tipo": "resumo"})
 
-        call_kwargs = mock_instructor.chat.completions.create.call_args.kwargs
+        call_kwargs = mock_instructor.messages.create.call_args.kwargs
         assert call_kwargs["response_model"] == Resumo
 
     async def test_excecao_propaga(self, mocker):
         mock_instructor = MagicMock()
-        mock_instructor.chat.completions.create.side_effect = RuntimeError("API down")
+        mock_instructor.messages.create = AsyncMock(side_effect=RuntimeError("API down"))
         mocker.patch("agents.agent_redator._make_instructor_client", return_value=mock_instructor)
 
         with pytest.raises(RuntimeError, match="API down"):
@@ -187,13 +187,13 @@ class TestCA03Resumo:
         mock_c = _make_instructor_mock(_mock_resumo())
         mocker.patch("agents.agent_redator._make_instructor_client", return_value=mock_c)
         await run({**BASE_STATE, "tipo": "resumo"})
-        assert mock_c.chat.completions.create.call_args.kwargs["response_model"] == Resumo
+        assert mock_c.messages.create.call_args.kwargs["response_model"] == Resumo
 
     async def test_ca03_max_tokens_correto(self, mocker):
         mock_c = _make_instructor_mock(_mock_resumo())
         mocker.patch("agents.agent_redator._make_instructor_client", return_value=mock_c)
         await run({**BASE_STATE, "tipo": "resumo"})
-        assert mock_c.chat.completions.create.call_args.kwargs["max_tokens"] == 3000
+        assert mock_c.messages.create.call_args.kwargs["max_tokens"] == 3000
 
 
 # ─── CA-02: DPO ───────────────────────────────────────────────────────────────
@@ -253,10 +253,10 @@ class TestCA02DPO:
         mock_c = _make_instructor_mock(self._mock_dpo())
         mocker.patch("agents.agent_redator._make_instructor_client", return_value=mock_c)
         await run({**BASE_STATE, "tipo": "dpo"})
-        assert mock_c.chat.completions.create.call_args.kwargs["response_model"] == DPO
+        assert mock_c.messages.create.call_args.kwargs["response_model"] == DPO
 
     async def test_ca02_max_tokens_correto(self, mocker):
         mock_c = _make_instructor_mock(self._mock_dpo())
         mocker.patch("agents.agent_redator._make_instructor_client", return_value=mock_c)
         await run({**BASE_STATE, "tipo": "dpo"})
-        assert mock_c.chat.completions.create.call_args.kwargs["max_tokens"] == 6000
+        assert mock_c.messages.create.call_args.kwargs["max_tokens"] == 6000

@@ -2,6 +2,7 @@ import os
 from typing import Type
 import anthropic
 import instructor
+from instructor.core import InstructorRetryException
 from loguru import logger
 from pydantic import BaseModel
 from graph import GraphState
@@ -62,8 +63,8 @@ def _build_prompt(tipo: str, chunks: list[dict], tema: str) -> str:
     )
 
 
-def _make_instructor_client() -> instructor.Instructor:
-    anth = anthropic.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY", ""))
+def _make_instructor_client() -> instructor.AsyncInstructor:
+    anth = anthropic.AsyncAnthropic(api_key=os.environ.get("ANTHROPIC_API_KEY", ""))
     return instructor.from_anthropic(anth)
 
 
@@ -84,7 +85,7 @@ async def run(state: GraphState) -> GraphState:
     prompt = _build_prompt(tipo, chunks, tema)
 
     try:
-        result = client.chat.completions.create(
+        result = await client.messages.create(
             model=model,
             max_tokens=max_tokens,
             messages=[{"role": "user", "content": prompt}],
@@ -92,6 +93,9 @@ async def run(state: GraphState) -> GraphState:
         )
         logger.debug(f"[{rid}] agent_redator: output OK ({schema.__name__})")
         return {**state, "output": result.model_dump()}
+    except InstructorRetryException as e:
+        logger.error(f"[{rid}] instructor max retries exceeded: {e!r}")
+        raise
     except Exception as e:
-        logger.error(f"[{rid}] agent_redator falhou: {type(e).__name__}")
+        logger.error(f"[{rid}] agent_redator falhou: {type(e).__name__}: {e!r}")
         raise

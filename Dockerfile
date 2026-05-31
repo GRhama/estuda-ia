@@ -13,4 +13,4 @@ RUN mkdir -p /app/data && chown appuser:appuser /app/data
 
 USER appuser
 
-CMD ["uvicorn", "api:app", "--host", "127.0.0.1", "--port", "8000", "--workers", "1"]
+CMD ["uvicorn", "api:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1"]

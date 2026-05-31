@@ -1,10 +1,17 @@
-estudaia.app {
+:80 {
     # Static PWA
-    handle /manifest.json { root * /srv/frontend; file_server }
-    handle /sw.js         { root * /srv/frontend; file_server }
-    handle /icon-*.png    { root * /srv/frontend; file_server }
-
-    # API proxy — preserva SSE (flush)
+    handle /manifest.json {
+        root * /srv/frontend
+        file_server
+    }
+    handle /sw.js {
+        root * /srv/frontend
+        file_server
+    }
+    handle /icon-*.png {
+        root * /srv/frontend
+        file_server
+    }
     handle /pesquisar* {
         reverse_proxy api:8000 {
             flush_interval -1
@@ -15,23 +22,16 @@ estudaia.app {
     handle /health {
         reverse_proxy api:8000
     }
-
-    # SPA fallback
     handle {
         root * /srv/frontend
         file_server
         try_files {path} /index.html
     }
-
-    # Security headers
     header {
-        Strict-Transport-Security "max-age=31536000; includeSubDomains"
         X-Content-Type-Options nosniff
         X-Frame-Options DENY
-        Referrer-Policy strict-origin-when-cross-origin
         -Server
     }
-
     encode gzip
     log {
         output stderr
